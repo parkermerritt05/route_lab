@@ -3,95 +3,86 @@ from classes import *
 from init import resetApp
 import json
 
+CUSTOM_FORMATION_BUTTON_INDEX = 4  # position of the "Custom" formation button
+
 def importData(app):
-    print('importing')
     app.dataPath = app.getTextInput('Input Play File Path')
-    try: 
+    try:
         with open(app.dataPath, 'r') as file:
             formation = json.load(file)
     except FileNotFoundError:
         app.importButton.text = "File Not Found"
-        print('Invalid File')
         return
-    if not isinstance(formation, dict): 
-        print('Error: Invalid Player Data')
+    if not isinstance(formation, dict):
+        app.importButton.text = "Invalid Data"
         return
-    formationRes = dict()
+    rebuilt = dict()
     for position in formation:
-        if "WR" in position or "RB" in position or "TE" in position:
-            isLegal = checkLegalSkillPlayer(formation, position)
-            if not isLegal:
-                app.importButton.text = "Invalid Data"
-                print('Error: Invalid Skill Player Data')
-                return
-            playerInfo = formation[position]
-            route = playerInfo["route"]
-            if "WR" in position:
-                formationRes[position] = WideReceiver(app, playerInfo["cx"],
-                            playerInfo["cy"],dx = playerInfo["dx"], 
-                            dy = playerInfo["dy"], route=route, translated = True)
-            elif "RB" in position:
-                formationRes[position] = RunningBack(app, playerInfo["cx"],
-                            playerInfo["cy"],dx = playerInfo["dx"], 
-                            dy = playerInfo["dy"], route=route, translated = True)
-            elif "TE" in position:
-                formationRes[position] = TightEnd(app, playerInfo["cx"],
-                            playerInfo["cy"],dx = playerInfo["dx"], 
-                            dy = playerInfo["dy"], route=route, translated = True)
-        else:
-            isLegal = checkLegalNormalPlayer(formation, position)
-            if not isLegal:
-                app.importButton.text = "Invalid Data"
-                print('Error: Invalid Normal Player Data')
-                return
-            playerInfo = formation[position]
-            if "QB" in position:
-                formationRes[position] = Quarterback(playerInfo["cx"],
-                            playerInfo["cy"], dx = playerInfo["dx"], 
-                            dy = playerInfo["dy"])
-            else:
-                formationRes[position] = Lineman(playerInfo["cx"],
-                            playerInfo["cy"], dx = playerInfo["dx"], 
-                            dy =playerInfo["dy"])
+        player = buildPlayerFromData(app, formation, position)
+        if player is None:
+            app.importButton.text = "Invalid Data"
+            return
+        rebuilt[position] = player
     app.importButton.text = "Imported!"
-    app.custom = formationRes
-    app.offensiveFormationButtons[4].resetFormation(app, formationRes)
+    app.custom = rebuilt
+    app.offensiveFormationButtons[CUSTOM_FORMATION_BUTTON_INDEX].resetFormation(app, rebuilt)
     app.oFormation = app.custom
 
-def exportData(app, isField=True):
-    if not isField:
-        resetApp(app, isField = False)
+def buildPlayerFromData(app, formation, position):
+    if isSkillPosition(position):
+        if not checkLegalSkillPlayer(formation, position):
+            return None
+        return buildSkillPlayer(app, formation[position], position)
+    if not checkLegalNormalPlayer(formation, position):
+        return None
+    return buildNormalPlayer(formation[position], position)
+
+def buildSkillPlayer(app, info, position):
+    route = info["route"]
+    if "WR" in position:
+        skillPlayerType = WideReceiver
+    elif "RB" in position:
+        skillPlayerType = RunningBack
     else:
-        resetApp(app)
+        skillPlayerType = TightEnd
+    return skillPlayerType(app, info["cx"], info["cy"], dx=info["dx"],
+                           dy=info["dy"], route=route, translated=True)
+
+def buildNormalPlayer(info, position):
+    if "QB" in position:
+        return Quarterback(info["cx"], info["cy"], dx=info["dx"], dy=info["dy"])
+    return Lineman(info["cx"], info["cy"], dx=info["dx"], dy=info["dy"])
+
+def exportData(app, isField=True):
+    resetApp(app, isField=isField)
     playDict = dict()
     dx = dy = 0
     for position in app.oFormation:
         player = app.oFormation[position]
-        if "WR" in position or "RB" in position or "TE" in position:
-            playDict[position] = {"cx": player.cx, "cy":player.cy, 
-                                "dx": dx, "dy":dy, 
-                                "route": player.route}
-        else:
-            playDict[position] = {"cx": player.cx, "cy":player.cy, 
-                                "dx": dx, "dy":dy}
+        playDict[position] = {"cx": player.cx, "cy": player.cy, "dx": dx, "dy": dy}
+        if isSkillPosition(position):
+            playDict[position]["route"] = player.route
     with open(f"routeLabPlay{app.indexExport}.json", "w") as file:
         json.dump(playDict, file, indent=2)
-    app.indexExport+=1
+    app.indexExport += 1
     app.exportButton.text = "Exported!"
 
 ##################################
 ### Import/Export Data Helpers ###
 ##################################
 
+def isSkillPosition(position):
+    return "WR" in position or "RB" in position or "TE" in position
+
 def checkLegalSkillPlayer(formation, position):
     playerInfo = formation[position]
-    return ("cx" in playerInfo and "cy" in playerInfo and 
+    return ("cx" in playerInfo and "cy" in playerInfo and
             "dx" in playerInfo and "dy" in playerInfo and
             "route" in playerInfo and
-            len(formation[position]) == 5)
+            len(playerInfo) == 5)
 
 def checkLegalNormalPlayer(formation, position):
     playerInfo = formation[position]
-    return ("cx" in playerInfo and "cy" in playerInfo and 
+    return ("cx" in playerInfo and "cy" in playerInfo and
             "dx" in playerInfo and "dy" in playerInfo and
-            len(formation[position]) == 4)
+            len(playerInfo) == 4)

@@ -1,13 +1,8 @@
 from cmu_graphics import *
 from init import onAppStart
 from drawing import redrawAll
-from classes import *
-from handlers import onMouseMove, onMouseDrag, onMousePress, onMouseRelease, onKeyPress, onKeyHold, onStep
-
-import random
-import math
-import copy
-import json
+from handlers import (onMouseMove, onMouseDrag, onMousePress, onMouseRelease,
+                      onKeyPress, onKeyHold, onStep)
 
 def main():
     runApp()
