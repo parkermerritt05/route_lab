@@ -1,4 +1,6 @@
-from constants import *
+from constants import (DESIGN_HEIGHT, DESIGN_SIDELINE, DESIGN_WIDTH,
+                       DESIGN_YARD_STEP, SCRIMMAGE_YARDS_FROM_BOTTOM)
+from coverage.setup import loadDefensiveFormations
 
 
 def applyWindowMetrics(app):
@@ -25,8 +27,6 @@ def designY(app, designYCoord):
 
 
 def onResize(app):
-    from init import loadDefensiveFormations
-
     oldW = getattr(app, 'prevWidth', 0)
     oldH = getattr(app, 'prevHeight', 0)
     applyWindowMetrics(app)
@@ -83,7 +83,6 @@ def scalePlayer(player, sx, sy):
         player.targetX *= sx
     if player.targetY is not None:
         player.targetY *= sy
-    # Routes are absolute pixel polylines baked at assign-time.
     if getattr(player, 'route', None):
         player.route = [(x * sx, y * sy) for (x, y) in player.route]
 

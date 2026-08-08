@@ -1,9 +1,9 @@
-from cmu_graphics import *
-from classes import *
-from init import resetApp
 import json
+from app.lifecycle import resetApp
+from domain import Lineman, Quarterback, RunningBack, TightEnd, WideReceiver
 
-CUSTOM_FORMATION_BUTTON_INDEX = 4  # position of the "Custom" formation button
+CUSTOM_FORMATION_BUTTON_INDEX = 4
+
 
 def importData(app):
     app.dataPath = app.getTextInput('Input Play File Path')
@@ -28,6 +28,7 @@ def importData(app):
     app.offensiveFormationButtons[CUSTOM_FORMATION_BUTTON_INDEX].resetFormation(app, rebuilt)
     app.oFormation = app.custom
 
+
 def buildPlayerFromData(app, formation, position):
     if isSkillPosition(position):
         if not checkLegalSkillPlayer(formation, position):
@@ -36,6 +37,7 @@ def buildPlayerFromData(app, formation, position):
     if not checkLegalNormalPlayer(formation, position):
         return None
     return buildNormalPlayer(formation[position], position)
+
 
 def buildSkillPlayer(app, info, position):
     route = info["route"]
@@ -48,10 +50,12 @@ def buildSkillPlayer(app, info, position):
     return skillPlayerType(app, info["cx"], info["cy"], dx=info["dx"],
                            dy=info["dy"], route=route, translated=True)
 
+
 def buildNormalPlayer(info, position):
     if "QB" in position:
         return Quarterback(info["cx"], info["cy"], dx=info["dx"], dy=info["dy"])
     return Lineman(info["cx"], info["cy"], dx=info["dx"], dy=info["dy"])
+
 
 def exportData(app, isField=True):
     resetApp(app, isField=isField)
@@ -67,12 +71,10 @@ def exportData(app, isField=True):
     app.indexExport += 1
     app.exportButton.text = "Exported!"
 
-##################################
-### Import/Export Data Helpers ###
-##################################
 
 def isSkillPosition(position):
     return "WR" in position or "RB" in position or "TE" in position
+
 
 def checkLegalSkillPlayer(formation, position):
     playerInfo = formation[position]
@@ -80,6 +82,7 @@ def checkLegalSkillPlayer(formation, position):
             "dx" in playerInfo and "dy" in playerInfo and
             "route" in playerInfo and
             len(playerInfo) == 5)
+
 
 def checkLegalNormalPlayer(formation, position):
     playerInfo = formation[position]

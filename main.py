@@ -1,9 +1,9 @@
 from cmu_graphics import *
-from init import onAppStart
-from drawing import redrawAll
-from handlers import (onMouseMove, onMouseDrag, onMousePress, onMouseRelease,
+from app.lifecycle import onAppStart
+from ui.draw import redrawAll
+from ui.input import (onMouseMove, onMouseDrag, onMousePress, onMouseRelease,
                       onKeyPress, onKeyHold, onStep)
-from layout import onResize
+from ui.layout import onResize
 
 def main():
     runApp()
