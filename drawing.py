@@ -59,10 +59,10 @@ def updateFieldButtonStates(app):
 def drawThrowIndicator(app):
     if not (app.throwing and app.oFormation['QB'].cy > app.lineOfScrimmage):
         return
-    opacityScale = 100 / app.maxBallVelo
+    opacityScale = 55 / app.maxBallVelo
     circleScale = 2.5
     drawCircle(app.mouseX, app.mouseY, app.ballVelocity * circleScale,
-               fill=rgb(0, 255, 0), opacity=app.ballVelocity * opacityScale)
+               fill=THROW_AIM_COLOR, opacity=app.ballVelocity * opacityScale)
 
 def drawThrowPowerBar(app):
     if not (app.throwing and app.oFormation['QB'].cy > app.lineOfScrimmage):
@@ -72,7 +72,9 @@ def drawThrowPowerBar(app):
     trackY = app.height - POWER_BAR_BOTTOM_MARGIN
     trackLeft = centerX - POWER_BAR_WIDTH // 2
     drawRect(centerX, trackY, POWER_BAR_WIDTH, POWER_BAR_HEIGHT,
-             fill=POWER_BAR_TRACK_COLOR, border='black', align='center', opacity=85)
+             fill=POWER_BAR_TRACK_COLOR, border=POWER_BAR_BORDER,
+             borderWidth=HUD_PANEL_BORDER_WIDTH, align='center',
+             opacity=POWER_BAR_TRACK_OPACITY)
     fillColor = (POWER_BAR_FILL_HIGH if fraction >= POWER_BAR_FULL_THRESHOLD
                  else POWER_BAR_FILL_LOW)
     drawRect(trackLeft, trackY, POWER_BAR_WIDTH * fraction, POWER_BAR_HEIGHT,
@@ -90,13 +92,17 @@ def drawTopReadout(app):
     elif app.playIsActive:
         drawLiveYards(app)
 
+def drawGlassPanel(cx, cy, width, height, fill, opacity,
+                   border=HUD_PANEL_BORDER):
+    drawRect(cx, cy, width, height, fill=fill, border=border,
+             borderWidth=HUD_PANEL_BORDER_WIDTH, align='center', opacity=opacity)
+
 def drawResultBanner(app):
     gainedYards = app.playResult.startswith('Tackled')
     color = BANNER_GAIN_COLOR if gainedYards else BANNER_LOSS_COLOR
     centerX = app.width // 2
-    drawRect(centerX, HUD_TOP_Y, RESULT_BANNER_WIDTH, RESULT_BANNER_HEIGHT,
-             fill=color, border='black', borderWidth=2, align='center',
-             opacity=RESULT_BANNER_OPACITY)
+    drawGlassPanel(centerX, HUD_TOP_Y, RESULT_BANNER_WIDTH, RESULT_BANNER_HEIGHT,
+                   color, RESULT_BANNER_OPACITY)
     if gainedYards:
         drawLabel(app.playResult, centerX, HUD_TOP_Y - 11, size=20, bold=True,
                   fill=HUD_TEXT_COLOR)
@@ -112,9 +118,8 @@ def drawLiveYards(app):
         return
     yards = int((app.lineOfScrimmage - carrier.cy) / app.yardStep)
     centerX = app.width // 2
-    drawRect(centerX, HUD_TOP_Y, LIVE_YARDS_WIDTH, LIVE_YARDS_HEIGHT,
-             fill=HUD_PANEL_COLOR, border='black', align='center',
-             opacity=HUD_PANEL_OPACITY)
+    drawGlassPanel(centerX, HUD_TOP_Y, LIVE_YARDS_WIDTH, LIVE_YARDS_HEIGHT,
+                   HUD_PANEL_COLOR, HUD_PANEL_OPACITY)
     drawLabel(f'{yards} yds', centerX, HUD_TOP_Y, size=20, bold=True,
               fill=HUD_TEXT_COLOR)
 
@@ -124,9 +129,8 @@ def drawPauseHint(app):
     text = 'Press SPACE to hike' if not app.playIsActive else 'Paused - SPACE to resume'
     centerX = app.width // 2
     hintY = app.height - HUD_BOTTOM_MARGIN
-    drawRect(centerX, hintY, PAUSE_HINT_WIDTH, PAUSE_HINT_HEIGHT,
-             fill=HUD_PANEL_COLOR, border='black', align='center',
-             opacity=PAUSE_HINT_OPACITY)
+    drawGlassPanel(centerX, hintY, PAUSE_HINT_WIDTH, PAUSE_HINT_HEIGHT,
+                   HUD_PANEL_COLOR, PAUSE_HINT_OPACITY)
     drawLabel(text, centerX, hintY, size=15, bold=True, fill=HUD_TEXT_COLOR)
 
 def anyFieldModalOpen(app):
@@ -156,25 +160,56 @@ def drawStatsMenu(app):
     drawModalBackdrop(app)
     centerX = app.width // 2
     baseY = app.height // 2 + STATS_PANEL_OFFSET_Y
-    drawRect(centerX, baseY, STATS_PANEL_WIDTH, STATS_PANEL_HEIGHT,
-             fill=rgb(60, 100, 60), border='black', opacity=93, align='center')
+    drawGlassPanel(centerX, baseY, STATS_PANEL_WIDTH, STATS_PANEL_HEIGHT,
+                   MODAL_PANEL_COLOR, MODAL_PANEL_OPACITY, MODAL_PANEL_BORDER)
     drawPanelCloseButton(centerX, baseY, STATS_PANEL_WIDTH, STATS_PANEL_HEIGHT)
-    drawLabel("Stats:", centerX, baseY - 100, size=45, bold=True)
+    drawLabel("Stats:", centerX, baseY - 100, size=45, bold=True,
+              fill=HUD_TEXT_COLOR)
     drawLabel("Total Yards Gained: " + str(app.totalYards),
-              centerX - 200, baseY - 50, size=18, bold=True, align='left')
+              centerX - 200, baseY - 50, size=18, bold=True, align='left',
+              fill=HUD_TEXT_COLOR)
     drawLabel("Completions: " + str(app.numCompletions) + " / " + str(app.attempts),
-              centerX - 200, baseY - 25, size=18, bold=True, align='left')
+              centerX - 200, baseY - 25, size=18, bold=True, align='left',
+              fill=HUD_TEXT_COLOR)
     drawLabel("Interceptions: " + str(app.ints),
-              centerX - 200, baseY, size=18, bold=True, align='left')
+              centerX - 200, baseY, size=18, bold=True, align='left',
+              fill=HUD_TEXT_COLOR)
     if app.lastPlayResult != "":
         drawLabel(f"Last Play Result: {app.lastPlayResult}",
-                  centerX - 200, baseY + 25, size=18, bold=True, align='left')
+                  centerX - 200, baseY + 25, size=18, bold=True, align='left',
+                  fill=HUD_TEXT_COLOR)
         if app.lastPlayResult != 'Intercepted':
             drawLabel(f"Yards on Last Play: {app.lastYardsRan}",
-                      centerX - 200, baseY + 50, size=18, bold=True, align='left')
+                      centerX - 200, baseY + 50, size=18, bold=True, align='left',
+                      fill=HUD_TEXT_COLOR)
         else:
             drawLabel("Yards on Last Play: N/A",
-                      centerX - 200, baseY + 50, size=18, bold=True, align='left')
+                      centerX - 200, baseY + 50, size=18, bold=True, align='left',
+                      fill=HUD_TEXT_COLOR)
+
+def drawPlayerToken(cx, cy, fill, label=None, labelColor=PLAYER_LABEL_COLOR):
+    drawCircle(cx, cy, PLAYER_DRAW_RADIUS, fill=fill)
+    if label is not None:
+        drawLabel(label, cx, cy, size=PLAYER_LABEL_SIZE, bold=True, fill=labelColor)
+
+def offenseFill(selected):
+    return OFFENSE_RED_SELECTED if selected else OFFENSE_RED
+
+def skillPositionLabel(position, player):
+    if isinstance(player, Lineman):
+        return None
+    if isinstance(player, Quarterback) or position == 'QB':
+        return 'QB'
+    if isinstance(player, RunningBack) or position == 'RB':
+        return 'RB'
+    if isinstance(player, TightEnd) or position == 'TE':
+        return 'TE'
+    if isinstance(player, WideReceiver) or position.startswith('WR'):
+        return 'WR'
+    return None
+
+def routeColorForPosition(position):
+    return ROUTE_COLORS_BY_POSITION.get(position, ROUTE_COLOR_DEFAULT)
 
 def drawDefense(app):
     offset = cameraOffset(app)
@@ -182,22 +217,21 @@ def drawDefense(app):
         cy = player.cy + offset
         if cy < 0 or cy > app.height:
             continue
-        drawCircle(player.cx, cy, PLAYER_DRAW_RADIUS,
-                   fill=DEFENSE_WHITE, border='black')
+        drawPlayerToken(player.cx, cy, DEFENSE_FILL)
 
 def drawOffense(app):
     offset = cameraOffset(app)
+    showLabels = not app.playIsActive
     for position in app.oFormation:
         player = app.oFormation[position]
-        color = OFFENSE_RED
-        if app.selectedPlayer == position and app.isOffensiveMenu:
-            color = OFFENSE_RED_SELECTED
+        selected = app.selectedPlayer == position and app.isOffensiveMenu
         cy = player.cy + offset
         if cy < 0 or cy > app.height:
             continue
-        drawCircle(player.cx, cy, PLAYER_DRAW_RADIUS, fill=color, border='black')
+        label = skillPositionLabel(position, player) if showLabels else None
+        drawPlayerToken(player.cx, cy, offenseFill(selected), label)
         if isinstance(player, SkillPlayer) and not app.playIsActive:
-            player.drawRoute(app)
+            player.drawRoute(app, routeColorForPosition(position))
 
 def drawSideline(app):
     los = app.lineOfScrimmage
@@ -222,16 +256,17 @@ def drawSideline(app):
         (app.width - 40, 642), (app.width - 49, 675), (app.width - 42, 702),
     ]
     for x, y in homeBench:
-        drawCircle(x, y, PLAYER_DRAW_RADIUS, fill=OFFENSE_RED, border='black')
+        drawPlayerToken(x, y, OFFENSE_RED)
     for x, y in awayBench:
-        drawCircle(x, y, PLAYER_DRAW_RADIUS, fill=DEFENSE_WHITE, border='black')
+        drawPlayerToken(x, y, DEFENSE_FILL)
 
 def drawInstructionPanelFrame(app):
     drawModalBackdrop(app)
     panelCy = app.height // 2 - INSTR_PANEL_OFFSET_Y
-    drawRect(app.width // 2, panelCy, INSTR_PANEL_WIDTH, INSTR_PANEL_HEIGHT,
-             fill=rgb(60, 100, 60), border='black', opacity=88, align='center')
-    drawLabel("Instructions:", app.width // 2, panelCy - 130, size=45, bold=True)
+    drawGlassPanel(app.width // 2, panelCy, INSTR_PANEL_WIDTH, INSTR_PANEL_HEIGHT,
+                   MODAL_PANEL_COLOR, MODAL_PANEL_OPACITY, MODAL_PANEL_BORDER)
+    drawLabel("Instructions:", app.width // 2, panelCy - 130, size=45, bold=True,
+              fill=HUD_TEXT_COLOR)
     drawPanelCloseButton(app.width // 2, panelCy, INSTR_PANEL_WIDTH, INSTR_PANEL_HEIGHT)
 
 def drawFieldInstructions(app):
@@ -240,19 +275,20 @@ def drawFieldInstructions(app):
     top = app.height // 2 - offset
     drawInstructionPanelFrame(app)
     drawLabel("- Press the spacebar to pause/resume",
-              left, top - 70, size=18, bold=True, align='left')
+              left, top - 70, size=18, bold=True, align='left', fill=HUD_TEXT_COLOR)
     drawLabel("- Click and hold to throw the ball",
-              left, top - 40, size=18, bold=True, align='left')
+              left, top - 40, size=18, bold=True, align='left', fill=HUD_TEXT_COLOR)
     drawLabel("Hold longer for a faster throw",
-              app.width // 2 - 150, top - 15, size=18, bold=True, align='left')
+              app.width // 2 - 150, top - 15, size=18, bold=True, align='left',
+              fill=HUD_TEXT_COLOR)
     drawLabel("- Use arrow keys to move ball carrier",
-              left, top + 15, size=18, bold=True, align='left')
+              left, top + 15, size=18, bold=True, align='left', fill=HUD_TEXT_COLOR)
     drawLabel("- Press 'S' to step by one frame when paused",
-              left, top + 45, size=18, bold=True, align='left')
+              left, top + 45, size=18, bold=True, align='left', fill=HUD_TEXT_COLOR)
     drawLabel("- Press 'R' to reset the play",
-              left, top + 75, size=18, bold=True, align='left')
+              left, top + 75, size=18, bold=True, align='left', fill=HUD_TEXT_COLOR)
     drawLabel("- Press 'P' to toggle pass rushers",
-              left, top + 105, size=18, bold=True, align='left')
+              left, top + 105, size=18, bold=True, align='left', fill=HUD_TEXT_COLOR)
 
 def drawMainMenu(app):
     drawRect(0, 0, app.width, app.height,
@@ -317,9 +353,10 @@ def drawFieldButtons(app):
 
 def drawOffensiveMenu(app):
     drawField(app, scrimmageLine=False)
-    drawLabel("Select Formation", app.sideLineOffset // 2, 17, size=20, bold=True)
+    drawLabel("Select Formation", app.sideLineOffset // 2, 17, size=20, bold=True,
+              fill=HUD_TEXT_COLOR)
     drawLabel("Select Route", app.width - app.sideLineOffset // 2, 17,
-              size=20, bold=True)
+              size=20, bold=True, fill=HUD_TEXT_COLOR)
 
     for button in app.offensiveFormationButtons:
         button.draw()
@@ -351,50 +388,104 @@ def drawMenuInstructionsMenu(app):
     top = app.height // 2 - offset
     drawInstructionPanelFrame(app)
     drawLabel("- Click a formation button to select formation",
-              left, top - 70, size=18, bold=True, align='left')
+              left, top - 70, size=18, bold=True, align='left', fill=HUD_TEXT_COLOR)
     drawLabel("- Click a player then a route to select route",
-              left, top - 40, size=18, bold=True, align='left')
+              left, top - 40, size=18, bold=True, align='left', fill=HUD_TEXT_COLOR)
     drawLabel("- Use arrow keys to move selected players",
-              left, top - 10, size=18, bold=True, align='left')
+              left, top - 10, size=18, bold=True, align='left', fill=HUD_TEXT_COLOR)
     drawLabel("- Click a player and drag to create custom route",
-              left, top + 20, size=18, bold=True, align='left')
+              left, top + 20, size=18, bold=True, align='left', fill=HUD_TEXT_COLOR)
     drawLabel("- Only import plays with exported file structure",
-              left, top + 50, size=18, bold=True, align='left')
+              left, top + 50, size=18, bold=True, align='left', fill=HUD_TEXT_COLOR)
     drawLabel("to avoid failed imports",
-              app.width // 2 - 150, top + 75, size=18, bold=True, align='left')
+              app.width // 2 - 150, top + 75, size=18, bold=True, align='left',
+              fill=HUD_TEXT_COLOR)
 
 def drawField(app, scrimmageLine=True):
-    drawRect(0, 0, app.width, app.height, fill=FIELD_GREEN)
+    drawMowStripes(app)
+    drawFieldApron(app)
     drawYardLines(app)
     if scrimmageLine and not app.isPlayActive:
-        drawLine(BOUNDARY_OFFSET + app.sideLineOffset, app.lineOfScrimmage,
-                 app.width - BOUNDARY_OFFSET - app.sideLineOffset,
-                 app.lineOfScrimmage, fill='blue')
+        drawLineOfScrimmage(app)
     drawSidelines(app)
 
+def drawMowStripes(app):
+    # Yard line n is at height - (n - 1) * yardStep, so yard 0 is one
+    # step below the screen bottom. Stripes flip on 0, 5, 10, ...
+    offset = cameraOffset(app)
+    stripeHeight = app.yardStep * MOW_STRIPE_YARDS
+    yardZeroY = app.height + app.yardStep
+    index = 0
+    while yardZeroY - index * stripeHeight + offset < app.height:
+        index -= 1
+    while yardZeroY - index * stripeHeight + offset > 0:
+        worldTop = yardZeroY - (index + 1) * stripeHeight
+        color = FIELD_GREEN if index % 2 == 0 else FIELD_GREEN_STRIPE
+        drawRect(0, worldTop + offset, app.width, stripeHeight, fill=color)
+        index += 1
+
+def drawFieldApron(app):
+    leftX = app.sideLineOffset + BOUNDARY_OFFSET
+    rightX = app.width - BOUNDARY_OFFSET - app.sideLineOffset
+    drawRect(0, 0, leftX, app.height, fill=FIELD_APRON)
+    drawRect(rightX, 0, app.width - rightX, app.height, fill=FIELD_APRON)
+
+def drawLineOfScrimmage(app):
+    offset = cameraOffset(app)
+    losY = app.lineOfScrimmage + offset
+    left = BOUNDARY_OFFSET + app.sideLineOffset
+    right = app.width - BOUNDARY_OFFSET - app.sideLineOffset
+    drawLine(left, losY, right, losY, fill=LOS_COLOR, lineWidth=LOS_WIDTH)
+    tick = LOS_TICK_HALF
+    for hashX in (leftHashX(app), rightHashX(app)):
+        drawLine(hashX, losY - tick, hashX, losY + tick,
+                 fill=LOS_COLOR, lineWidth=LOS_WIDTH)
+
 def drawYardLines(app):
+    offset = cameraOffset(app)
     yardMarkerCount = 1
     lineCount = 0
     leftEdge = 30 + app.sideLineOffset
     rightEdge = app.width - 30 - app.sideLineOffset
-    for y in range(app.height, 0, -app.yardStep):
+    yardStep = app.yardStep
+    if yardStep <= 0:
+        return
+    # Walk by float yardStep so 5-/10-yard lines stay on true yard
+    # boundaries after resize (int(yardStep) drifts when height changes).
+    worldY = float(app.height)
+    while worldY > 0:
         lineCount += 1
+        y = worldY + offset
         if lineCount % 5 == 0:
-            drawLine(leftEdge, y, rightEdge, y, fill='white')
+            drawMajorYardLine(app, leftEdge, rightEdge, y, lineCount,
+                              yardMarkerCount)
             if lineCount % 10 == 0:
-                drawLabel(f'{yardMarkerCount} 0', 60 + app.sideLineOffset, y,
-                          size=20, fill='white', rotateAngle=90)
-                drawLabel(f'{yardMarkerCount} 0', app.width - 60 - app.sideLineOffset, y,
-                          size=20, fill='white', rotateAngle=270)
                 yardMarkerCount += 1
         else:
-            drawLine(leftEdge, y, 40 + app.sideLineOffset, y, fill='white')
-            drawLine(rightEdge, y, app.width - 40 - app.sideLineOffset, y, fill='white')
-            drawLine(leftHashX(app), y, leftHashX(app) + 10, y, fill='white')
-            drawLine(rightHashX(app), y, rightHashX(app) + 10, y, fill='white')
+            drawHashMarks(app, leftEdge, rightEdge, y)
+        worldY -= yardStep
+
+def drawMajorYardLine(app, leftEdge, rightEdge, y, lineCount, yardMarkerCount):
+    isTenYard = lineCount % 10 == 0
+    color = YARD_LINE_MAJOR if isTenYard else YARD_LINE_MINOR
+    width = YARD_LINE_MAJOR_WIDTH if isTenYard else YARD_LINE_MINOR_WIDTH
+    drawLine(leftEdge, y, rightEdge, y, fill=color, lineWidth=width)
+    if not isTenYard:
+        return
+    drawLabel(f'{yardMarkerCount} 0', 60 + app.sideLineOffset, y,
+              size=YARD_NUMBER_SIZE, fill=YARD_NUMBER_COLOR, rotateAngle=90)
+    drawLabel(f'{yardMarkerCount} 0', app.width - 60 - app.sideLineOffset, y,
+              size=YARD_NUMBER_SIZE, fill=YARD_NUMBER_COLOR, rotateAngle=270)
+
+def drawHashMarks(app, leftEdge, rightEdge, y):
+    mark = HASH_MARK_LENGTH
+    drawLine(leftEdge, y, leftEdge + mark, y, fill=HASH_MARK_COLOR)
+    drawLine(rightEdge, y, rightEdge - mark, y, fill=HASH_MARK_COLOR)
+    drawLine(leftHashX(app), y, leftHashX(app) + mark, y, fill=HASH_MARK_COLOR)
+    drawLine(rightHashX(app), y, rightHashX(app) + mark, y, fill=HASH_MARK_COLOR)
 
 def drawSidelines(app):
     leftX = app.sideLineOffset + BOUNDARY_OFFSET
     rightX = app.width - BOUNDARY_OFFSET - app.sideLineOffset
-    drawLine(leftX, 0, leftX, app.height, fill='white', lineWidth=4)
-    drawLine(rightX, 0, rightX, app.height, fill='white', lineWidth=4)
+    drawLine(leftX, 0, leftX, app.height, fill='white', lineWidth=SIDELINE_WIDTH)
+    drawLine(rightX, 0, rightX, app.height, fill='white', lineWidth=SIDELINE_WIDTH)

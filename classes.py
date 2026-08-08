@@ -21,8 +21,15 @@ class Ball:
             offset = CAMERA_SCROLL_YARDS * app.yardStep - self.cy
         scaleFactor = 1 + self.height / 50
         angle = self.getAngle()
-        drawOval(self.cx, self.cy + offset, 10 * scaleFactor, 5 * scaleFactor,
-                 fill='brown', align='center', rotateAngle=angle)
+        cx, cy = self.cx, self.cy + offset
+        width, height = 10 * scaleFactor, 5 * scaleFactor
+        drawOval(cx, cy, width, height, fill=BALL_FILL, align='center',
+                 rotateAngle=angle)
+        laceHalf = 2.2 * scaleFactor
+        rad = math.radians(angle)
+        dx, dy = laceHalf * math.cos(rad), laceHalf * math.sin(rad)
+        drawLine(cx - dx, cy - dy, cx + dx, cy + dy,
+                 fill=BALL_LACE_COLOR, lineWidth=1)
 
     def throwToTarget(self, targetX, targetY, app):
         self.targetX = targetX
@@ -313,16 +320,28 @@ class SkillPlayer(Player):
             newRoute[i] = (clampX(app, endX), endY)
         return newRoute
 
-    def drawRoute(self, app):
+    def routeDrawPoint(self, index, cameraShift):
+        # Routes store the player center; draw from the circle's top apex.
+        x, y = self.route[index]
+        resolved = index if index >= 0 else len(self.route) + index
+        if resolved == 0:
+            y -= PLAYER_DRAW_RADIUS
+        return x, y + cameraShift
+
+    def drawRoute(self, app, color=ROUTE_COLOR_DEFAULT):
+        offset = 0
+        if app.ball.cy <= CAMERA_SCROLL_YARDS * app.yardStep:
+            offset = CAMERA_SCROLL_YARDS * app.yardStep - app.ball.cy
         for i in range(1, len(self.route) - 1):
-            endX, endY = self.route[i]
-            startX, startY = self.route[i - 1]
-            drawLine(startX, startY, endX, endY, fill='black', lineWidth=2)
-        arrowX, arrowY = self.route[-1]
+            startX, startY = self.routeDrawPoint(i - 1, offset)
+            endX, endY = self.routeDrawPoint(i, offset)
+            drawLine(startX, startY, endX, endY,
+                     fill=color, lineWidth=ROUTE_FIELD_WIDTH)
+        prevX, prevY = self.routeDrawPoint(-2, offset)
+        arrowX, arrowY = self.routeDrawPoint(-1, offset)
         arrowX = clampX(app, arrowX)
-        prevX, prevY = self.route[-2]
         drawLine(prevX, prevY, arrowX, arrowY,
-                 fill='black', lineWidth=2, arrowEnd=True)
+                 fill=color, lineWidth=ROUTE_FIELD_WIDTH, arrowEnd=True)
 
 class WideReceiver(SkillPlayer):
     def __init__(self, app, cx, cy, dx=0, dy=0, route=None, translated=False):

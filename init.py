@@ -1,22 +1,19 @@
 from cmu_graphics import *
 from classes import *
 from constants import *
+from layout import applyWindowMetrics, midX, losY, placeButtons
 
 def onAppStart(app):
-    app.width = 1000
-    app.height = 750
-    app.sideLineOffset = 194
+    app.width = DESIGN_WIDTH
+    app.height = DESIGN_HEIGHT
+    app.prevWidth = app.width
+    app.prevHeight = app.height
     app.yardLine = 0
     app.totalYards = 0
     app.score = 0
-    app.yardStep = 20
-    app.lineOfScrimmage = app.height - (app.yardStep * SCRIMMAGE_YARDS_FROM_BOTTOM)
     app.stepsPerSecond = 40
     app.yardsPerSecond = 5
-    app.velocity = app.yardsPerSecond * (app.yardStep / app.stepsPerSecond)
-    app.maxSpeed = app.velocity
-    app.acceleration = 0.2 * app.yardStep / app.stepsPerSecond
-    app.fieldSides = [30, app.width - 30]
+    applyWindowMetrics(app)
     app.maxBallVelo = 6
     app.mouseX = 0
     app.mouseY = 0
@@ -33,6 +30,7 @@ def onAppStart(app):
     loadStats(app)
     loadFieldButtons(app)
     loadOffensiveMenuButtons(app)
+    placeButtons(app)
     resetApp(app)
 
     app.isField = False
@@ -75,66 +73,68 @@ def resetApp(app, isField=True):
     loadDefensiveFormations(app)
 
 def offensiveLine(app, rtDepth=13):
-    los = app.lineOfScrimmage
     return {
-        'LT': Lineman(450, los + 18),
-        'LG': Lineman(475, los + 13),
-        'C': Lineman(app.width // 2, los + 13),
-        'RG': Lineman(525, los + 13),
-        'RT': Lineman(550, los + rtDepth),
+        'LT': Lineman(midX(app, -50), losY(app, 18)),
+        'LG': Lineman(midX(app, -25), losY(app, 13)),
+        'C': Lineman(midX(app, 0), losY(app, 13)),
+        'RG': Lineman(midX(app, 25), losY(app, 13)),
+        'RT': Lineman(midX(app, 50), losY(app, rtDepth)),
     }
 
 def loadOffensiveFormations(app, firstTime=False):
-    los = app.lineOfScrimmage
-    mid = app.width // 2
-
     app.singleBack = {
-        'WR1': WideReceiver(app, 310, los + 13, route=app.route),
-        'WR2': WideReceiver(app, 370, los + 33, route=app.route),
+        'WR1': WideReceiver(app, midX(app, -190), losY(app, 13), route=app.route),
+        'WR2': WideReceiver(app, midX(app, -130), losY(app, 33), route=app.route),
         **offensiveLine(app, rtDepth=13),
-        'TE': TightEnd(app, 575, los + 28, route=app.route),
-        'WR3': WideReceiver(app, 660, los + 13, route=app.route),
-        'QB': Quarterback(mid, los + 40),
-        'RB': RunningBack(app, mid, los + 70, route=app.rbRouteList[2]),
+        'TE': TightEnd(app, midX(app, 75), losY(app, 28), route=app.route),
+        'WR3': WideReceiver(app, midX(app, 160), losY(app, 13), route=app.route),
+        'QB': Quarterback(midX(app, 0), losY(app, 40)),
+        'RB': RunningBack(app, midX(app, 0), losY(app, 70),
+                          route=app.rbRouteList[2]),
     }
     app.shotgun = {
-        'WR1': WideReceiver(app, 310, los + 13, route=app.route),
-        'WR2': WideReceiver(app, 370, los + 33, route=app.route),
+        'WR1': WideReceiver(app, midX(app, -190), losY(app, 13), route=app.route),
+        'WR2': WideReceiver(app, midX(app, -130), losY(app, 33), route=app.route),
         **offensiveLine(app, rtDepth=13),
-        'TE': TightEnd(app, 575, los + 28, route=app.route),
-        'WR3': WideReceiver(app, 660, los + 13, route=app.route),
-        'QB': Quarterback(mid, los + 70),
-        'RB': RunningBack(app, mid + 35, los + 70, route=app.rbRouteList[2]),
+        'TE': TightEnd(app, midX(app, 75), losY(app, 28), route=app.route),
+        'WR3': WideReceiver(app, midX(app, 160), losY(app, 13), route=app.route),
+        'QB': Quarterback(midX(app, 0), losY(app, 70)),
+        'RB': RunningBack(app, midX(app, 35), losY(app, 70),
+                          route=app.rbRouteList[2]),
     }
     app.spread = {
-        'WR1': WideReceiver(app, 300, los + 13, route=app.route),
-        'WR2': WideReceiver(app, 340, los + 33, route=app.route),
+        'WR1': WideReceiver(app, midX(app, -200), losY(app, 13), route=app.route),
+        'WR2': WideReceiver(app, midX(app, -160), losY(app, 33), route=app.route),
         **offensiveLine(app, rtDepth=18),
-        'WR3': WideReceiver(app, 660, los + 33, route=app.route),
-        'WR4': WideReceiver(app, 725, los + 13, route=app.route),
-        'QB': Quarterback(mid, los + 70),
-        'RB': RunningBack(app, mid + 35, los + 70, route=app.rbRouteList[2]),
+        'WR3': WideReceiver(app, midX(app, 160), losY(app, 33), route=app.route),
+        'WR4': WideReceiver(app, midX(app, 225), losY(app, 13), route=app.route),
+        'QB': Quarterback(midX(app, 0), losY(app, 70)),
+        'RB': RunningBack(app, midX(app, 35), losY(app, 70),
+                          route=app.rbRouteList[2]),
     }
     app.bunch = {
-        'WR1': WideReceiver(app, 310, los + 13, route=app.route),
-        'WR2': WideReceiver(app, 340, los + 27, route=app.route),
-        'WR3': WideReceiver(app, 380, los + 15, route=app.route),
+        'WR1': WideReceiver(app, midX(app, -190), losY(app, 13), route=app.route),
+        'WR2': WideReceiver(app, midX(app, -160), losY(app, 27), route=app.route),
+        'WR3': WideReceiver(app, midX(app, -120), losY(app, 15), route=app.route),
         **offensiveLine(app, rtDepth=18),
-        'WR4': WideReceiver(app, 725, los + 13, route=app.route),
-        'QB': Quarterback(mid, los + 70),
-        'RB': RunningBack(app, mid + 35, los + 70, route=app.rbRouteList[2]),
+        'WR4': WideReceiver(app, midX(app, 225), losY(app, 13), route=app.route),
+        'QB': Quarterback(midX(app, 0), losY(app, 70)),
+        'RB': RunningBack(app, midX(app, 35), losY(app, 70),
+                          route=app.rbRouteList[2]),
     }
     app.custom = {
-        'WR1': WideReceiver(app, 290, los + 40, route=app.route),
-        'WR2': WideReceiver(app, 340, los + 40, route=app.route),
+        'WR1': WideReceiver(app, midX(app, -210), losY(app, 40), route=app.route),
+        'WR2': WideReceiver(app, midX(app, -160), losY(app, 40), route=app.route),
         **offensiveLine(app, rtDepth=18),
-        'WR3': WideReceiver(app, 660, los + 40, route=app.route),
-        'WR4': WideReceiver(app, 710, los + 40, route=app.route),
-        'QB': Quarterback(mid, los + 70),
-        'RB': RunningBack(app, mid + 35, los + 70, route=app.rbRouteList[2]),
+        'WR3': WideReceiver(app, midX(app, 160), losY(app, 40), route=app.route),
+        'WR4': WideReceiver(app, midX(app, 210), losY(app, 40), route=app.route),
+        'QB': Quarterback(midX(app, 0), losY(app, 70)),
+        'RB': RunningBack(app, midX(app, 35), losY(app, 70),
+                          route=app.rbRouteList[2]),
     }
     app.oFormation = app.singleBack
-    app.ball = Ball(app.oFormation['C'].cx, app.oFormation['C'].cy, app.oFormation['C'])
+    app.ball = Ball(app.oFormation['C'].cx, app.oFormation['C'].cy,
+                    app.oFormation['C'])
 
 def loadOffensiveRoutes(app):
     # Routes are lists of (dx, dy) waypoints measured in yard-steps, relative to
